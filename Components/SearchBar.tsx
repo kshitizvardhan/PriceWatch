@@ -12,7 +12,47 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/Components/ui/alert-dialog"
-import { scrapeAndStoreProduct } from '@/lib/actions'
+import { scrapeAndStoreProduct, checkAuth } from '@/lib/actions'
+import { auth } from "@clerk/nextjs/server";
+
+
+export const isValidAmazonProductURL = (url: string) => {
+  try {
+    const parsedURL = new URL(url)
+    const hostname = parsedURL.hostname
+
+    // Check if hostName contains amazon.com or amazon.ca followed by country code.
+    if (
+      hostname.includes("amazon.com") ||
+      hostname.includes("amazon.") ||
+      hostname.endsWith("amazon")
+    ) {
+      return true
+    }
+  } catch (error) {
+    return false
+  }
+  return false
+}
+
+export const isValidMyntraProductURL = (url: string) => {
+  try {
+    const parsedURL = new URL(url)
+    const hostname = parsedURL.hostname
+
+    // Check if hostName contains amazon.com or amazon.ca followed by country code.
+    if (
+      hostname.includes("myntra.com") ||
+      hostname.includes("myntra.") ||
+      hostname.endsWith("myntra")
+    ) {
+      return true
+    }
+  } catch (error) {
+    return false
+  }
+  return false
+}
 
 const SearchBar = () => {
   const [searchPrompt, setSearchPrompt] = useState("")
@@ -26,24 +66,6 @@ const SearchBar = () => {
     "Paste the cursed URL for a deal too good to be true...",
   ]
 
-  const isValidAmazonProductURL = (url: string) => {
-    try {
-      const parsedURL = new URL(url)
-      const hostname = parsedURL.hostname
-
-      // Check if hostName contains amazon.com or amazon.ca followed by country code.
-      if (
-        hostname.includes("amazon.com") ||
-        hostname.includes("amazon.") ||
-        hostname.endsWith("amazon")
-      ) {
-        return true
-      }
-    } catch (error) {
-      return false
-    }
-    return false
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchPrompt(e.target.value)
@@ -51,8 +73,10 @@ const SearchBar = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault() // this stops the page to reload on clicking submit.
+
+    await checkAuth(); // if not login then, redirect to sign-in/signup
     
-    const isValidLink = isValidAmazonProductURL(searchPrompt)
+    const isValidLink = isValidAmazonProductURL(searchPrompt) || isValidMyntraProductURL(searchPrompt);
 
     if (!isValidLink) {
       setIsDialogOpen(true)
